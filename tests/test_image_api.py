@@ -87,9 +87,14 @@ class ImageTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.payload(n=2)
 
     def test_official_pixel_size_is_unchanged(self):
-        p, _ = self.payload(model="aitudou-image-g-v2.5-flare", size="3840x2160")
-        self.assertEqual(p["size"], "3840x2160")
-        self.assertEqual(p["quality"], "high")
+        for model in ("aitudou-image-g-v2.5-flare", "aitudou-image-g-v2.5-sunburst"):
+            prompt = "长提示词" * 3000
+            p, _ = self.payload(model=model, size="3840x2160", prompt=prompt)
+            self.assertEqual(p["model"], model)
+            self.assertEqual(p["prompt"], prompt)
+            self.assertEqual(p["size"], "3840x2160")
+            self.assertEqual(p["resolution"], "4k")
+            self.assertEqual(p["quality"], "high")
         self.assertEqual(api.resolve_size({"size": "custom", "custom_width": 3840, "custom_height": 2160}), "3840x2160")
 
     def test_upload_order_and_reference_dimensions(self):

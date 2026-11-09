@@ -7,7 +7,7 @@ import comfy.utils
 from comfy_api.latest import io
 
 from .config import make_config
-from .image_api import ImageClient, LOWPRICE, MODELS, SIZES, resolve_model, resolve_size
+from .image_api import AITUDOU_MODELS, ImageClient, MODELS, SIZES, resolve_model, resolve_size
 
 
 QZWConfig = io.Custom("QZW_API_CONFIG")
@@ -43,7 +43,7 @@ class QZWAPIConfig(io.ComfyNode):
 class QZWGPTImage25(io.ComfyNode):
     @classmethod
     def define_schema(cls):
-        model_options = [io.DynamicCombo.Option(name, []) for name in (*MODELS, LOWPRICE)]
+        model_options = [io.DynamicCombo.Option(name, []) for name in (*MODELS, *AITUDOU_MODELS)]
         model_options.append(io.DynamicCombo.Option("custom", [
             io.String.Input("custom_model", default="aitudou-image-g-v2.5-lowprice",
                             tooltip="填写中转站文档中的完整模型 ID；可转为输入连接文本节点。")]))

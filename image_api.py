@@ -25,6 +25,7 @@ RATIOS = ("1:1", "16:9", "9:16", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5",
 SIZES = ("16:9", "auto", "1024x1024", "1536x1024", "1024x1536", "2048x2048",
          "2048x1152", "1152x2048", "3840x2160", "2160x3840") + tuple(r for r in RATIOS if r != "16:9")
 LOWPRICE = "aitudou-image-g-v2.5-lowprice"
+AITUDOU_MODELS = ("aitudou-image-g-v2.5-flare", "aitudou-image-g-v2.5-sunburst", LOWPRICE)
 LOG = logging.getLogger("ComfyUI-QZW")
 
 
