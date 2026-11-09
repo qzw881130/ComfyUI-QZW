@@ -50,7 +50,7 @@ class ImageTests(unittest.TestCase):
         return dict(model=api.LOWPRICE, prompt="red ceramic teapot", size="16:9", **kw)
 
     def payload(self, model=api.LOWPRICE, size="16:9", **kw):
-        args = dict(protocol="aitudou", model=model, prompt="test", size=size, resolution="4k",
+        args = dict(protocol="aitudou", model=model, prompt="test image", size=size, resolution="4k",
                     quality="high", n=1, background="opaque", moderation="auto", nsfw_check=False)
         args.update(kw)
         return api.build_payload(**args)
@@ -82,7 +82,7 @@ class ImageTests(unittest.TestCase):
 
     def test_lowprice_fields_and_pixel_to_ratio(self):
         p, notes = self.payload(size="3840x2160")
-        self.assertEqual(p, {"model": api.LOWPRICE, "prompt": "test", "size": "16:9", "resolution": "4k", "n": 1, "nsfw_check": False})
+        self.assertEqual(p, {"model": api.LOWPRICE, "prompt": "test image", "size": "16:9", "resolution": "4k", "n": 1, "nsfw_check": False})
         self.assertTrue(notes)
         with self.assertRaises(ValueError): self.payload(n=2)
 
@@ -156,6 +156,42 @@ class ImageTests(unittest.TestCase):
         with self.assertRaises(api.ImageAPIError) as caught: self.client.generate(**self.args())
         self.assertEqual(self.session.request.call_count, 1)
         self.assertNotIn("fake-secret", str(caught.exception))
+        self.assertIn("提交结果未知", str(caught.exception))
+
+    def test_lowprice_prompt_limit_before_upload(self):
+        for length in (4, 5001, 10443):
+            args = self.args(images={"image1": torch.zeros((1, 16, 32, 3))})
+            args["prompt"] = "字" * length
+            with self.assertRaisesRegex(ValueError, f"当前为 {length} 字符"):
+                self.client.generate(**args)
+        self.session.request.assert_not_called()
+        for length in (5, 5000):
+            payload, _ = self.payload(prompt="字" * length)
+            self.assertEqual(len(payload["prompt"]), length)
+        # Other protocols and models retain their own prompt limits.
+        self.payload(model="custom-model", prompt="字" * 10443)
+
+    def test_upload_ssl_error_details_without_generation_or_secrets(self):
+        self.session.request.side_effect = requests.exceptions.SSLError(
+            "UNEXPECTED_EOF_WHILE_READING fake-secret https://user:proxy-password@proxy.test:7890")
+        with self.assertRaises(api.ImageAPIError) as caught:
+            self.client.generate(**self.args(images={"image1": torch.zeros((1, 16, 32, 3))}))
+        message = str(caught.exception)
+        self.assertIn("UNEXPECTED_EOF_WHILE_READING", message)
+        self.assertIn("reference_1.png", message)
+        self.assertIn("32×16", message)
+        self.assertIn("尚未提交生图任务", message)
+        self.assertNotIn("fake-secret", message)
+        self.assertNotIn("proxy-password", message)
+        self.assertNotIn("检查服务端任务记录", message)
+        self.assertEqual(self.session.request.call_count, 1)
+        self.assertTrue(self.session.request.call_args.args[1].endswith("/v1/files/upload"))
+
+    def test_query_network_error_is_distinct_from_submission(self):
+        self.session.request.side_effect = requests.Timeout("read timed out")
+        with self.assertRaisesRegex(api.ImageAPIError, "查询请求失败"):
+            self.client.request("GET", "/v1/image/generations/task-a")
+        self.assertEqual(self.session.request.call_count, 1)
 
     def test_rejection_redacts_key(self):
         self.session.request.return_value = response({"error": {"message": "bad fake-secret"}}, 503)

@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import math
+import re
 import time
 from urllib.parse import quote, urlsplit
 
@@ -66,6 +67,9 @@ def build_payload(protocol, model, prompt, size, resolution, quality, n, backgro
     if protocol == "aitudou":
         payload["resolution"] = effective_resolution
     if protocol == "aitudou" and effective_model == LOWPRICE:
+        if not 5 <= len(payload["prompt"]) <= 5000:
+            raise ValueError(f"Aitudou lowprice 接口要求提示词为 5–5000 字符，当前为 {len(payload['prompt'])} 字符；"
+                             "请调整提示词后再运行。尚未上传参考图或提交生图任务。")
         if int(n) != 1:
             raise ValueError("Aitudou lowprice 每次仅支持 n=1。")
         if "x" in size:
@@ -189,7 +193,15 @@ class ImageClient:
                 timeout=(30, 900 if method == "POST" else 90), allow_redirects=False, **kwargs)
         except requests.RequestException as exc:
             # A timed-out POST may have created a paid task. Never auto-resubmit.
-            raise ImageAPIError(f"{method} {path}: {type(exc).__name__}；未自动重发，请先检查服务端任务记录。") from None
+            detail = safe_response(str(exc), self.config.api_key)
+            detail = re.sub(r"(https?://)[^/\s@]+@", r"\1[redacted]@", detail)[:1200]
+            if method == "POST" and path == "/v1/files/upload":
+                hint = "参考图上传失败，尚未提交生图任务；未自动重试。"
+            elif method == "POST":
+                hint = "未自动重发；提交结果未知，请先检查服务端任务记录。"
+            else:
+                hint = "查询请求失败；未重新提交生图任务。"
+            raise ImageAPIError(f"{method} {path}: {type(exc).__name__}: {detail}；{hint}") from None
         try:
             body = response.json()
         except ValueError:
@@ -202,8 +214,11 @@ class ImageClient:
         return body
 
     def upload(self, file):
-        name, raw, _ = file
-        body = self.request("POST", "/v1/files/upload", files={"file": (name, raw, "image/png")})
+        name, raw, size = file
+        try:
+            body = self.request("POST", "/v1/files/upload", files={"file": (name, raw, "image/png")})
+        except ImageAPIError as exc:
+            raise ImageAPIError(f"参考图 {name}（{size[0]}×{size[1]}，{len(raw) / 1048576:.2f} MiB）：{exc}") from None
         url = body.get("url")
         if not isinstance(url, str) or urlsplit(url).scheme not in ("http", "https"):
             raise ImageAPIError("上传接口没有返回有效的图片 URL。")

@@ -45,6 +45,8 @@ API Base URL：`https://api.aitudou.net`，`protocol=auto` 或 `aitudou`。
 
 Aitudou 2.5 文档未提供 mask 参数，接入 mask 会在上传前明确报错。
 
+低价版接口实际校验提示词为 5–5000 字符；节点在上传前检查长度，超限时提示当前字符数，不会自动截断内容。
+
 文档：[官方版](https://api.aitudou.net/docs/#image-g-v25) · [低价版](https://api.aitudou.net/docs/#image-g-v25-ext) · [上传](https://api.aitudou.net/docs/#upload)
 
 ## 其他服务
@@ -64,6 +66,8 @@ OpenAI 编辑支持单图 mask：ComfyUI mask 白色区域转换为透明区域�
 `response` 包含：实际协议、接口、请求模型和尺寸、脱敏后的提交字段、参考图尺寸、任务 ID、原始响应（省略 Base64）、实际解码尺寸和输出 tensor 形状。提示词正文及参考图签名地址不记录到请求摘要中。输出 URL 和 API 原始响应可能含临时结果链接，请按需保管。
 
 发生尺寸不符时给出提示并返回实际图片；不会静默缩放，也不会用空白图掩盖请求失败。HTTP POST 超时或失败不会自动重新提交，避免重复计费；查询超时也不会新建任务。可用日志或 `response` 中的 task_id 查询原任务。停止 ComfyUI 执行并不取消服务端已提交的任务。
+
+参考图上传失败发生在生图提交之前。错误信息包含参考图序号、尺寸、文件大小及脱敏后的网络错误详情。`SSLError` 表示 TLS 连接出错，需根据具体原因检查代理、证书或连接中断；节点保持证书校验，不自动切换代理。
 
 ## 工作流与测试
 
