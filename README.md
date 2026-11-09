@@ -37,7 +37,11 @@ API Base URL：`https://api.aitudou.net`，`protocol=auto` 或 `aitudou`。
 
 预设模型的 `-2k` / `-4k` 后缀转换成 `resolution`，官方版模型 ID 本身不带后缀。自定义模型名称不会做别名转换。
 
-节点先调用 `/v1/files/upload` 上传参考图，再向 `/v1/image/generations` 提交 JSON，并轮询 `/v1/image/generations/{id}`。Aitudou 始终使用异步任务，不受 `async_mode` 开关影响。图片上传与生成只在执行节点时发生。
+节点先复用有效的参考图缓存，未命中时调用 `/v1/files/upload` 上传，再向 `/v1/image/generations` 提交 JSON，并轮询 `/v1/image/generations/{id}`。Aitudou 始终使用异步任务，不受 `async_mode` 开关影响。图片上传与生成只在执行节点时发生。
+
+参考图上传缓存默认启用，按实际上传 PNG 字节的 MD5、中转站地址和 API Key 指纹区分。修改提示词、seed、模型或参考图顺序不影响相同图片的缓存复用；重启后仍有效。有效期取上传响应 `expires_in`、COS 签名时间和文件最长保留 24 小时中的最早者，提前 10 分钟停止复用；命中缓存不会延长有效期，无法确定有效期的链接不缓存。过期记录会在后续写入时清理。
+
+缓存保存在 ComfyUI 用户目录的 `__qzw/upload_cache.sqlite3`，遵循 `--user-directory` 设置，不在插件 Git 目录中。只保存内容摘要、账户作用域指纹、临时图片链接和过期时间，不保存图片或 API Key。日志显示 `upload cache hit`，`response.reference_uploads` 显示缓存命中与新上传的数量。高级选项 `force_upload=true` 可强制重新上传并刷新缓存，之后恢复为 false。缓存文件损坏或无法写入时会正常上传，不阻断生图。此缓存仅适用于 Aitudou 的独立上传接口，其他协议的 multipart 编辑流程不变。
 
 官方版支持精确像素尺寸，`size=custom` 后可填宽高；服务端文档要求宽高为 16 的倍数、单边最多 3840、总像素 655360–8294400、最大比例 3:1。精确像素尺寸优先于 `resolution`。
 

@@ -14,13 +14,14 @@ import torch
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-for name in ("config", "image_api"):
+for name in ("config", "image_api", "upload_cache"):
     spec = importlib.util.spec_from_file_location("qzw_" + name, ROOT / (name + ".py"))
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
 config = sys.modules["qzw_config"]
 api = sys.modules["qzw_image_api"]
+cache = sys.modules["qzw_upload_cache"]
 
 
 def png(size=(32, 16), mode="RGB"):
@@ -45,6 +46,10 @@ class ImageTests(unittest.TestCase):
         self.session, self.media = Mock(), Mock()
         self.client = api.ImageClient(config.APIConfig("https://api.aitudou.net", "fake-secret", "aitudou"),
                                       session=self.session, media_session=self.media)
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.cache_path = Path(folder.name) / "upload_cache.sqlite3"
+        self.client.upload_cache = cache.UploadCache(self.cache_path, self.client.config.base_url, self.client.config.api_key)
 
     def args(self, **kw):
         return dict(model=api.LOWPRICE, prompt="red ceramic teapot", size="16:9", **kw)
@@ -123,6 +128,65 @@ class ImageTests(unittest.TestCase):
         self.assertNotIn("headers", self.media.get.call_args.kwargs)
         self.assertEqual(json.loads(report)["decoded_sizes"], [[1672, 941]])
         self.assertNotIn("fake-secret", report)
+
+    def test_cached_references_survive_new_client_and_changed_prompt_model_order(self):
+        first, second = torch.zeros((1, 16, 32, 3)), torch.ones((1, 16, 32, 3))
+        url_a, url_b = "https://cdn.test/a.png", "https://cdn.test/b.png"
+        self.session.request.side_effect = [response({"url": url_a, "expires_in": 86400}),
+            response({"url": url_b, "expires_in": 86400}), response(result())]
+        _, _, report = self.client.generate(**self.args(images={"image1": first, "image2": second, "image3": first}))
+        self.assertEqual(json.loads(report)["reference_uploads"], {"cache_hits": 1, "uploaded": 2})
+        self.assertEqual(self.session.request.call_args.kwargs["json"]["images"], [url_a, url_b, url_a])
+        self.assertEqual(self.session.request.call_count, 3)
+        self.client.close()
+
+        session = Mock()
+        session.request.return_value = response(result())
+        restarted = api.ImageClient(self.client.config, session=session, media_session=Mock(),
+            upload_cache=cache.UploadCache(self.cache_path, self.client.config.base_url, self.client.config.api_key))
+        self.addCleanup(restarted.close)
+        _, _, report = restarted.generate(model="aitudou-image-g-v2.5-sunburst", prompt="a different prompt", size="16:9",
+                                         images={"image1": second, "image2": first})
+        self.assertEqual(session.request.call_count, 1)
+        self.assertTrue(session.request.call_args.args[1].endswith("/v1/image/generations"))
+        self.assertEqual(session.request.call_args.kwargs["json"]["images"], [url_b, url_a])
+        self.assertEqual(json.loads(report)["reference_uploads"], {"cache_hits": 2, "uploaded": 0})
+        self.assertNotIn(b"fake-secret", self.cache_path.read_bytes())
+
+    def test_expiring_url_reuploads_and_force_upload_refreshes_cache(self):
+        file = ("reference_1.png", png(), (32, 16))
+        self.session.request.side_effect = [response({"url": f"https://cdn.test/{i}.png", "expires_in": 3600}) for i in range(3)]
+        with patch.object(api.time, "time", return_value=10000):
+            self.assertTrue(self.client.upload(file).endswith("/0.png"))
+        with patch.object(api.time, "time", return_value=12999):
+            self.assertTrue(self.client.upload(file).endswith("/0.png"))
+        with patch.object(api.time, "time", return_value=13000):
+            self.assertTrue(self.client.upload(file).endswith("/1.png"))
+            self.client.force_upload = True
+            self.assertTrue(self.client.upload(file).endswith("/2.png"))
+            self.client.force_upload = False
+            self.assertTrue(self.client.upload(file).endswith("/2.png"))
+        self.assertEqual(self.session.request.call_count, 3)
+
+    def test_successful_upload_retained_after_later_reference_fails(self):
+        first, second = torch.zeros((1, 16, 32, 3)), torch.ones((1, 16, 32, 3))
+        self.session.request.side_effect = [response({"url": "https://cdn.test/a.png", "expires_in": 86400}),
+                                            requests.exceptions.SSLError("temporary upload failure")]
+        args = self.args(images={"image1": first, "image2": second})
+        with self.assertRaises(api.ImageAPIError): self.client.generate(**args)
+        self.assertEqual(self.session.request.call_count, 2)
+        self.session.request.reset_mock()
+        self.session.request.side_effect = [response({"url": "https://cdn.test/b.png", "expires_in": 86400}), response(result())]
+        _, _, report = self.client.generate(**args)
+        self.assertEqual(self.session.request.call_count, 2)
+        self.assertEqual(json.loads(report)["reference_uploads"], {"cache_hits": 1, "uploaded": 1})
+
+    def test_corrupt_cache_does_not_block_upload(self):
+        self.cache_path.write_bytes(b"invalid sqlite file")
+        self.session.request.return_value = response({"url": "https://cdn.test/a.png", "expires_in": 86400})
+        with self.assertLogs("ComfyUI-QZW", level="WARNING"):
+            self.assertEqual(self.client.upload(("reference_1.png", png(), (32, 16))), "https://cdn.test/a.png")
+        self.assertEqual(self.session.request.call_count, 1)
 
     def test_base64_4k_preserved(self):
         tensor, _, sizes = self.client.decode(result((3840, 2160)))

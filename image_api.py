@@ -2,6 +2,7 @@
 
 import base64
 import copy
+import hashlib
 import io
 import json
 import logging
@@ -175,12 +176,16 @@ def safe_response(value, key):
 
 
 class ImageClient:
-    def __init__(self, config, *, session=None, media_session=None, check_interrupt=None, progress=None):
+    def __init__(self, config, *, session=None, media_session=None, check_interrupt=None, progress=None,
+                 upload_cache=None, force_upload=False):
         self.config = config
         self.session = session or requests.Session()
         self.media_session = media_session or requests.Session()
         self.check_interrupt = check_interrupt or (lambda: None)
         self.progress = progress or (lambda value: None)
+        self.upload_cache = upload_cache
+        self.force_upload = force_upload
+        self.upload_stats = {"cache_hits": 0, "uploaded": 0}
 
     def close(self):
         self.session.close()
@@ -215,14 +220,27 @@ class ImageClient:
         return body
 
     def upload(self, file):
+        self.check_interrupt()
         name, raw, size = file
+        digest = hashlib.md5(raw, usedforsecurity=False).hexdigest()
+        if self.upload_cache is not None and not self.force_upload:
+            cached = self.upload_cache.get(digest)
+            if cached:
+                self.upload_stats["cache_hits"] += 1
+                LOG.info("[QZW] upload cache hit: %s (%dx%d)", name, *size)
+                return cached
+        started_at = time.time()
         try:
             body = self.request("POST", "/v1/files/upload", files={"file": (name, raw, "image/png")})
         except ImageAPIError as exc:
             raise ImageAPIError(f"参考图 {name}（{size[0]}×{size[1]}，{len(raw) / 1048576:.2f} MiB）：{exc}") from None
         url = body.get("url")
-        if not isinstance(url, str) or urlsplit(url).scheme not in ("http", "https"):
+        if not isinstance(url, str) or urlsplit(url).scheme not in ("http", "https") or not urlsplit(url).hostname:
             raise ImageAPIError("上传接口没有返回有效的图片 URL。")
+        self.upload_stats["uploaded"] += 1
+        if self.upload_cache is not None:
+            self.upload_cache.put(digest, url, body.get("expires_in"), started_at)
+        LOG.info("[QZW] uploaded: %s (%dx%d)", name, *size)
         return url
 
     def poll(self, task_id, interval, max_time):
@@ -292,6 +310,7 @@ class ImageClient:
                  background="auto", moderation="auto", nsfw_check=False, images=None,
                  mask=None, async_mode=False, poll_interval=5, max_poll_time=3600):
         protocol = self.config.protocol
+        self.upload_stats = {"cache_hits": 0, "uploaded": 0}
         payload, notes = build_payload(protocol, model, prompt, size, resolution, quality, n,
                                        background, moderation, nsfw_check)
         if protocol == "aitudou" and mask is not None:
@@ -345,5 +364,7 @@ class ImageClient:
                   "reference_sizes": [list(f[2]) for f in files], "decoded_sizes": dimensions,
                   "output_shape": list(tensor.shape), "notes": notes,
                   "api_response": safe_response(result, self.config.api_key)}
+        if protocol == "aitudou":
+            report["reference_uploads"] = dict(self.upload_stats)
         self.progress(100)
         return tensor, "\n".join(urls), json.dumps(report, ensure_ascii=False, indent=2)
