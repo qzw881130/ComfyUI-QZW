@@ -167,7 +167,7 @@ def task_info(result):
 def safe_response(value, key):
     if isinstance(value, dict):
         return {k: "[base64 image omitted]" if k == "b64_json" else safe_response(v, key)
-                for k, v in value.items() if k.lower() not in ("api_key", "authorization")}
+                for k, v in value.items() if k.lower() not in ("api_key", "apikey", "authorization")}
     if isinstance(value, list):
         return [safe_response(v, key) for v in value]
     if isinstance(value, str) and key:
@@ -311,6 +311,8 @@ class ImageClient:
                  mask=None, async_mode=False, poll_interval=5, max_poll_time=3600):
         protocol = self.config.protocol
         self.upload_stats = {"cache_hits": 0, "uploaded": 0}
+        if protocol == "runninghub":
+            raise ValueError("RunningHub 工作流请使用 QZW RunningHub GPT Image 2.5 节点。")
         payload, notes = build_payload(protocol, model, prompt, size, resolution, quality, n,
                                        background, moderation, nsfw_check)
         if protocol == "aitudou" and mask is not None:

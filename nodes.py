@@ -22,8 +22,8 @@ class QZWAPIConfig(io.ComfyNode):
             node_id="QZW_API_Config", display_name="QZW API Config", category="QZW/API",
             inputs=[
                 io.String.Input("base_url", default="https://api.aitudou.net"),
-                io.Combo.Input("protocol", options=["auto", "aitudou", "openai", "workshop", "sub2api"], default="auto",
-                               tooltip="auto 按域名识别 Aitudou/AI工坊，其余使用 OpenAI 同步协议。"),
+                io.Combo.Input("protocol", options=["auto", "aitudou", "openai", "workshop", "sub2api", "runninghub"], default="auto",
+                               tooltip="auto 按域名识别 Aitudou/AI工坊/RunningHub，其余使用 OpenAI 同步协议。"),
                 io.String.Input("api_key", default="", tooltip="直接输入会保存在工作流中。建议使用密钥文件或 QZW_API_KEY。"),
                 io.String.Input("api_key_file", default="", tooltip="可选：本机单行密钥文件完整路径；密钥不会写入工作流。"),
             ], outputs=[QZWConfig.Output(display_name="api_config")])

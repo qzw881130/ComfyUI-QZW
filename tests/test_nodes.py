@@ -5,9 +5,12 @@ import json
 import os
 import socket
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 COMFY = Path(os.environ.get("COMFYUI_ROOT", str(ROOT.parent.parent)))
@@ -36,6 +39,15 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(options[-1]["key"], "custom")
         self.assertIn("custom_model", options[-1]["inputs"]["required"])
         self.assertEqual(required["images"][1]["template"]["min"], 0)
+
+    def test_runninghub_schema_and_registration(self):
+        cls = self.package.QZWRunningHubGPTImage25
+        cls.GET_SCHEMA().validate()
+        required = cls.INPUT_TYPES()["required"]
+        self.assertEqual(required["images"][1]["template"]["min"], 1)
+        self.assertEqual(required["workflow_id"][1]["default"], "2117652716037173249")
+        self.assertFalse(required["force_upload"][1]["default"])
+        self.assertIn("runninghub", self.package.QZWAPIConfig.INPUT_TYPES()["required"]["protocol"][1]["options"])
 
     def test_environment_credential_fingerprint_stays_stable(self):
         cls = self.package.QZWAPIConfig
@@ -75,6 +87,31 @@ class NodeTests(unittest.TestCase):
             config = next(n for n in nodes.values() if n["type"] == "QZW_API_Config")
             self.assertEqual(config["widgets_values_named"]["api_key"], "")
             self.assertEqual(config["widgets_values_named"]["api_key_file"], "")
+
+    def test_runninghub_examples_pass_real_comfy_validation(self):
+        import execution
+        import folder_paths
+        import nodes
+        from comfy_extras.nodes_preview_any import PreviewAny
+        from comfy_extras.nodes_primitive import StringMultiline
+        mapping = {"QZW_API_Config": self.package.QZWAPIConfig,
+                   "QZW_RunningHub_GPT_Image_2_5": self.package.QZWRunningHubGPTImage25,
+                   "PreviewAny": PreviewAny, "PrimitiveStringMultiline": StringMultiline}
+        loop = asyncio.new_event_loop()
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                for i in range(1, 10):
+                    Image.new("RGB", (16, 16)).save(Path(directory) / f"reference_{i:02d}.png")
+                with patch.object(folder_paths, "get_input_directory", return_value=directory), \
+                     patch.dict(nodes.NODE_CLASS_MAPPINGS, mapping), \
+                     patch.object(socket.socket, "connect", side_effect=AssertionError("No network")):
+                    for file in (ROOT / "examples").glob("QZW_RunningHub_*.api.json"):
+                        with self.subTest(workflow=file.name):
+                            graph = json.loads(file.read_text(encoding="utf-8"))
+                            valid, error, _, errors = loop.run_until_complete(execution.validate_prompt("qzw-test", graph, None))
+                            self.assertTrue(valid, (error, errors))
+        finally:
+            loop.close()
 
 
 if __name__ == "__main__":

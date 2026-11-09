@@ -1,0 +1,1047 @@
+{
+  "id": "4e897fab-d272-49ae-bf2a-225e0a233e52",
+  "revision": 0,
+  "last_node_id": 400,
+  "last_link_id": 112,
+  "nodes": [
+    {
+      "id": 360,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            100
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_01.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_01.png",
+        "upload": "image"
+      },
+      "title": "Reference 1"
+    },
+    {
+      "id": 376,
+      "type": "LoadImage",
+      "pos": [
+        320,
+        0
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            101
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_02.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_02.png",
+        "upload": "image"
+      },
+      "title": "Reference 2"
+    },
+    {
+      "id": 377,
+      "type": "LoadImage",
+      "pos": [
+        640,
+        0
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            102
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_03.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_03.png",
+        "upload": "image"
+      },
+      "title": "Reference 3"
+    },
+    {
+      "id": 389,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        430
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            103
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_04.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_04.png",
+        "upload": "image"
+      },
+      "title": "Reference 4"
+    },
+    {
+      "id": 390,
+      "type": "LoadImage",
+      "pos": [
+        320,
+        430
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            104
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_05.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_05.png",
+        "upload": "image"
+      },
+      "title": "Reference 5"
+    },
+    {
+      "id": 391,
+      "type": "LoadImage",
+      "pos": [
+        640,
+        430
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            105
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_06.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_06.png",
+        "upload": "image"
+      },
+      "title": "Reference 6"
+    },
+    {
+      "id": 392,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        860
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            106
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_07.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_07.png",
+        "upload": "image"
+      },
+      "title": "Reference 7"
+    },
+    {
+      "id": 393,
+      "type": "LoadImage",
+      "pos": [
+        320,
+        860
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            107
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_08.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_08.png",
+        "upload": "image"
+      },
+      "title": "Reference 8"
+    },
+    {
+      "id": 394,
+      "type": "LoadImage",
+      "pos": [
+        640,
+        860
+      ],
+      "size": [
+        290,
+        380
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "image"
+          }
+        },
+        {
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "link": null,
+          "widget": {
+            "name": "upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            108
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference_09.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference_09.png",
+        "upload": "image"
+      },
+      "title": "Reference 9"
+    },
+    {
+      "id": 384,
+      "type": "PrimitiveStringMultiline",
+      "pos": [
+        1010,
+        0
+      ],
+      "size": [
+        440,
+        480
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "value",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "value"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            110
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PrimitiveStringMultiline"
+      },
+      "widgets_values": [
+        "请将九张参考图按输入顺序排成三行三列，保留各图主体、颜色和外观，不漏图、不重复、不交换位置。"
+      ],
+      "widgets_values_named": {
+        "value": "请将九张参考图按输入顺序排成三行三列，保留各图主体、颜色和外观，不漏图、不重复、不交换位置。"
+      },
+      "title": "Prompt"
+    },
+    {
+      "id": 397,
+      "type": "QZW_API_Config",
+      "pos": [
+        1010,
+        600
+      ],
+      "size": [
+        440,
+        230
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "base_url",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "base_url"
+          }
+        },
+        {
+          "name": "protocol",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "protocol"
+          }
+        },
+        {
+          "name": "api_key",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "api_key"
+          }
+        },
+        {
+          "name": "api_key_file",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "api_key_file"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "api_config",
+          "type": "QZW_API_CONFIG",
+          "links": [
+            109
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "QZW_API_Config"
+      },
+      "widgets_values": [
+        "https://www.runninghub.cn",
+        "runninghub",
+        "",
+        ""
+      ],
+      "widgets_values_named": {
+        "base_url": "https://www.runninghub.cn",
+        "protocol": "runninghub",
+        "api_key": "",
+        "api_key_file": ""
+      }
+    },
+    {
+      "id": 378,
+      "type": "QZW_RunningHub_GPT_Image_2_5",
+      "pos": [
+        1520,
+        0
+      ],
+      "size": [
+        480,
+        760
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "api_config",
+          "type": "QZW_API_CONFIG",
+          "link": 109
+        },
+        {
+          "name": "images.image1",
+          "type": "IMAGE",
+          "link": 100
+        },
+        {
+          "name": "images.image2",
+          "type": "IMAGE",
+          "link": 101
+        },
+        {
+          "name": "images.image3",
+          "type": "IMAGE",
+          "link": 102
+        },
+        {
+          "name": "images.image4",
+          "type": "IMAGE",
+          "link": 103
+        },
+        {
+          "name": "images.image5",
+          "type": "IMAGE",
+          "link": 104
+        },
+        {
+          "name": "images.image6",
+          "type": "IMAGE",
+          "link": 105
+        },
+        {
+          "name": "images.image7",
+          "type": "IMAGE",
+          "link": 106
+        },
+        {
+          "name": "images.image8",
+          "type": "IMAGE",
+          "link": 107
+        },
+        {
+          "name": "images.image9",
+          "type": "IMAGE",
+          "link": 108
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "link": 110,
+          "widget": {
+            "name": "prompt"
+          }
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "aspect_ratio"
+          }
+        },
+        {
+          "name": "resolution",
+          "type": "COMBO",
+          "link": null,
+          "widget": {
+            "name": "resolution"
+          }
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "seed"
+          }
+        },
+        {
+          "name": "workflow_id",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "workflow_id"
+          }
+        },
+        {
+          "name": "poll_interval",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "poll_interval"
+          }
+        },
+        {
+          "name": "max_poll_time",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "max_poll_time"
+          }
+        },
+        {
+          "name": "force_upload",
+          "type": "BOOLEAN",
+          "link": null,
+          "widget": {
+            "name": "force_upload"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            111
+          ]
+        },
+        {
+          "name": "image_urls",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "response",
+          "type": "STRING",
+          "links": [
+            112
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "QZW_RunningHub_GPT_Image_2_5"
+      },
+      "widgets_values": [
+        "",
+        "16:9",
+        "1k",
+        841681231,
+        "randomize",
+        "2117652716037173249",
+        5,
+        3600,
+        false
+      ],
+      "widgets_values_named": {
+        "prompt": "",
+        "aspect_ratio": "16:9",
+        "resolution": "1k",
+        "seed": 841681231,
+        "control_after_generate": "randomize",
+        "workflow_id": "2117652716037173249",
+        "poll_interval": 5,
+        "max_poll_time": 3600,
+        "force_upload": false
+      }
+    },
+    {
+      "id": 373,
+      "type": "SaveImage",
+      "pos": [
+        2070,
+        0
+      ],
+      "size": [
+        460,
+        380
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 111
+        },
+        {
+          "name": "filename_prefix",
+          "type": "STRING",
+          "link": null,
+          "widget": {
+            "name": "filename_prefix"
+          }
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "QZW/RunningHub_GPT_Image25"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "QZW/RunningHub_GPT_Image25"
+      }
+    },
+    {
+      "id": 386,
+      "type": "PreviewAny",
+      "pos": [
+        2070,
+        450
+      ],
+      "size": [
+        560,
+        680
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 112
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 400,
+      "type": "MarkdownNote",
+      "pos": [
+        1010,
+        1190
+      ],
+      "size": [
+        990,
+        260
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "MarkdownNote"
+      },
+      "widgets_values": [
+        "配置 RunningHub API Key 或密钥文件，再选择本地参考图。默认使用工作流 2117652716037173249。仅接实际需要的参考图，未使用的云端示例图会从本次执行副本中移除。运行会产生平台费用。"
+      ]
+    }
+  ],
+  "links": [
+    [
+      100,
+      360,
+      0,
+      378,
+      1,
+      "IMAGE"
+    ],
+    [
+      101,
+      376,
+      0,
+      378,
+      2,
+      "IMAGE"
+    ],
+    [
+      102,
+      377,
+      0,
+      378,
+      3,
+      "IMAGE"
+    ],
+    [
+      103,
+      389,
+      0,
+      378,
+      4,
+      "IMAGE"
+    ],
+    [
+      104,
+      390,
+      0,
+      378,
+      5,
+      "IMAGE"
+    ],
+    [
+      105,
+      391,
+      0,
+      378,
+      6,
+      "IMAGE"
+    ],
+    [
+      106,
+      392,
+      0,
+      378,
+      7,
+      "IMAGE"
+    ],
+    [
+      107,
+      393,
+      0,
+      378,
+      8,
+      "IMAGE"
+    ],
+    [
+      108,
+      394,
+      0,
+      378,
+      9,
+      "IMAGE"
+    ],
+    [
+      109,
+      397,
+      0,
+      378,
+      0,
+      "QZW_API_CONFIG"
+    ],
+    [
+      110,
+      384,
+      0,
+      378,
+      10,
+      "STRING"
+    ],
+    [
+      111,
+      378,
+      0,
+      373,
+      0,
+      "IMAGE"
+    ],
+    [
+      112,
+      378,
+      2,
+      386,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.65,
+      "offset": [
+        60,
+        60
+      ]
+    }
+  },
+  "version": 0.4
+}

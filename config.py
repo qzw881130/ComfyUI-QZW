@@ -19,7 +19,7 @@ def make_config(base_url, api_key="", api_key_file="", protocol="auto"):
         raise ValueError("API base URL 必须是有效的 http(s) 服务地址，不能包含密钥或查询参数。")
     if base_url.endswith("/v1"):
         base_url = base_url[:-3]
-    if protocol not in ("auto", "aitudou", "openai", "workshop", "sub2api"):
+    if protocol not in ("auto", "aitudou", "openai", "workshop", "sub2api", "runninghub"):
         raise ValueError("不支持的 API 协议。")
     key = str(api_key).strip()
     if not key and str(api_key_file).strip():
@@ -31,5 +31,6 @@ def make_config(base_url, api_key="", api_key_file="", protocol="auto"):
     if protocol == "auto":
         host = urlsplit(base_url).hostname
         protocol = "aitudou" if host == "api.aitudou.net" else (
-            "workshop" if host in ("ai.t8star.org", "ai.t8star.cn") else "openai")
+            "runninghub" if host in ("www.runninghub.cn", "www.runninghub.ai", "runninghub.cn", "runninghub.ai") else (
+                "workshop" if host in ("ai.t8star.org", "ai.t8star.cn") else "openai"))
     return APIConfig(base_url, key, protocol)

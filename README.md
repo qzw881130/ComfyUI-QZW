@@ -1,6 +1,6 @@
 # ComfyUI-QZW
 
-GPT Image 2.5 文生图、多参考图编辑与独立 API 配置节点。使用 ComfyUI V3 节点接口，需要支持 DynamicCombo / Autogrow 的新版 ComfyUI 和前端。
+GPT Image 2.5 文生图、多参考图编辑、RunningHub 云端工作流与独立 API 配置节点。使用 ComfyUI V3 节点接口，需要支持 DynamicCombo / Autogrow 的新版 ComfyUI 和前端。
 
 ## 安装
 
@@ -11,7 +11,7 @@ git clone https://github.com/qzw881130/ComfyUI-QZW.git
 python -m pip install -r ComfyUI-QZW/requirements.txt
 ```
 
-使用运行 ComfyUI 的 Python 安装依赖，然后重启 ComfyUI、刷新页面。搜索 `QZW API Config` 和 `QZW GPT Image 2.5`。PyTorch 使用 ComfyUI 已安装的版本。
+使用运行 ComfyUI 的 Python 安装依赖，然后重启 ComfyUI、刷新页面。搜索 `QZW API Config`、`QZW GPT Image 2.5` 或 `QZW RunningHub GPT Image 2.5`。PyTorch 使用 ComfyUI 已安装的版本。
 
 ## 使用
 
@@ -61,9 +61,25 @@ Aitudou 2.5 文档未提供 mask 参数，接入 mask 会在上传前明确报�
 | `workshop` | 同上，异步时加 `?async=true` | `/v1/images/tasks/{id}` |
 | `sub2api` | 同上，异步时加 `/async` | `/v1/images/tasks/{id}` |
 
-`auto` 识别 Aitudou 和 `ai.t8star.org/.cn`；其他域名默认 `openai`。使用 Sub2API 异步功能时请明确选择 `sub2api` 并启用 `async_mode`，服务端需要支持相应功能。输入是同一套节点界面，不表示任意模型支持所有尺寸、质量或参数。
+`auto` 识别 Aitudou、`ai.t8star.org/.cn` 和 RunningHub；其他域名默认 `openai`。使用 Sub2API 异步功能时请明确选择 `sub2api` 并启用 `async_mode`，服务端需要支持相应功能。RunningHub 工作流使用下述独立节点。输入是同一套节点界面，不表示任意模型支持所有尺寸、质量或参数。
 
 OpenAI 编辑支持单图 mask：ComfyUI mask 白色区域转换为透明区域以进行重绘。
+
+## RunningHub 云端工作流
+
+使用 `QZW RunningHub GPT Image 2.5`，把 `QZW API Config` 的 `base_url` 设置为 `https://www.runninghub.cn`，`protocol` 选择 `runninghub`（该域名也可用 auto），配置自己的 RunningHub 密钥文件。请勿使用其他中转站的 API Key。
+
+默认模板 ID 为 `2117652716037173249`，对应 `RH_RhartImageG25FlareImageToImage`。连接 1–9 张参考图，设置 `prompt`、`aspect_ratio`、`resolution`、`seed`，把 image 输出接 SaveImage。此处不套用 Aitudou lowprice 的 5000 字符检查，提示词完整传给云端，实际限制由服务端决定。输出图片不缩放。
+
+每次执行先通过 `/api/openapi/getJsonApiFormat` 读取当前云端模板，再按模型输入 image1、image2… 的顺序识别 LoadImage 节点。默认模板对应 `470、510、503、520、521、522、523、524、525`，提示词来源为 `516`、生成节点为 `550`、保存节点为 `515`。
+
+上传接口 `/openapi/v2/media/upload/binary` 返回的 **fileName** 用于 LoadImage，不使用 download_url。节点根据实际参考图数量构造本次 API 格式工作流，去除未使用的图片连接与无关输出；单图时不会混入其余示例图。通过 `/task/openapi/create` 的 `workflow` 字段提交执行副本，并通过 `nodeInfoList` 显式指定 seed，不修改云端保存的模板。`workflow_id` 用于读取模板；提交完整 `workflow` 时按平台约定执行该副本。若换模板，需要仍包含一个 Flare 图生图节点、独立 LoadImage 输入和直接连接的 SaveImage。
+
+结果通过 `/openapi/v2/query` 查询并下载，`response` 包含任务 ID、图片节点映射、缓存统计与实际图片尺寸。创建任务不自动重试，查询失败只重试原任务。不会设置会额外计费的 `retainSeconds`。RunningHub 的工作流运行和模型调用按平台规则计费。
+
+参考图同样使用 MD5 持久化缓存，文件为用户目录下 `__qzw/runninghub_upload_cache.sqlite3`，保存 fileName；与 Aitudou 缓存独立。有效期最多 24 小时，按响应/签名较早时间并预留 10 分钟，`force_upload=true` 可刷新缓存。单图与九图的 UI/API 示例位于 `examples/QZW_RunningHub_*.json`，均不含密钥。
+
+接口文档：[读取工作流](https://www.runninghub.cn/runninghub-api-doc-cn/api-425749014) · [上传](https://www.runninghub.cn/runninghub-api-doc-cn/api-425749007) · [提交工作流](https://www.runninghub.cn/runninghub-api-doc-cn/api-425749013) · [查询 V2](https://www.runninghub.cn/runninghub-api-doc-cn/api-425767306)
 
 ## 诊断与费用
 

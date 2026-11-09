@@ -1,0 +1,66 @@
+{
+  "360": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_01.png"
+    }
+  },
+  "384": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "请根据参考图和编辑要求生成图片，保留主体、颜色和外观。"
+    }
+  },
+  "397": {
+    "class_type": "QZW_API_Config",
+    "inputs": {
+      "base_url": "https://www.runninghub.cn",
+      "protocol": "runninghub",
+      "api_key": "",
+      "api_key_file": ""
+    }
+  },
+  "378": {
+    "class_type": "QZW_RunningHub_GPT_Image_2_5",
+    "inputs": {
+      "prompt": [
+        "384",
+        0
+      ],
+      "aspect_ratio": "16:9",
+      "resolution": "1k",
+      "seed": 841681231,
+      "workflow_id": "2117652716037173249",
+      "poll_interval": 5,
+      "max_poll_time": 3600,
+      "force_upload": false,
+      "api_config": [
+        "397",
+        0
+      ],
+      "images.image1": [
+        "360",
+        0
+      ]
+    }
+  },
+  "373": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "QZW/RunningHub_GPT_Image25",
+      "images": [
+        "378",
+        0
+      ]
+    }
+  },
+  "386": {
+    "class_type": "PreviewAny",
+    "inputs": {
+      "source": [
+        "378",
+        2
+      ]
+    }
+  }
+}
