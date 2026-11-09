@@ -69,7 +69,9 @@ OpenAI 编辑支持单图 mask：ComfyUI mask 白色区域转换为透明区域�
 
 使用 `QZW RunningHub GPT Image 2.5`，把 `QZW API Config` 的 `base_url` 设置为 `https://www.runninghub.cn`，`protocol` 选择 `runninghub`（该域名也可用 auto），配置自己的 RunningHub 密钥文件。请勿使用其他中转站的 API Key。
 
-默认模板 ID 为 `2117652716037173249`，对应 `RH_RhartImageG25FlareImageToImage`。连接 1–9 张参考图，设置 `prompt`、`aspect_ratio`、`resolution`、`seed`，把 image 输出接 SaveImage。此处不套用 Aitudou lowprice 的 5000 字符检查，提示词完整传给云端，实际限制由服务端决定。输出图片不缩放。
+默认模板 ID 为 `2117652716037173249`，对应 `RH_RhartImageG25FlareImageToImage`。参考图入口随连接逐个增加，最多 15 个；模板中的 LoadImage 不足时，在本次提交的工作流中自动补齐，不修改云端保存的模板。设置 `prompt`、`aspect_ratio`、`resolution`、`seed`，把 image 输出接 SaveImage。此处不套用 Aitudou lowprice 的 5000 字符检查，提示词完整传给云端，实际限制由服务端决定。输出图片不缩放。
+
+`channel=economy` 为默认经济版，最多接收 10 张；旧工作流保持此通道。11–15 张请选择 `channel=stable`：提交时替换为 `RH_RhartImageG25OfficialTokenFlareEdit` 稳定版，按 token 计费，使用 `quality=high`、`background=auto`、`outputFormat=png`。稳定版的 `aspect_ratio=auto` 不提交比例参数，交由服务端决定。图片批次会按顺序展开，稳定版底层最多接收 16 张。超出通道容量会在上传前提示，不会丢弃多出的图片或自动切换计费通道。
 
 每次执行先通过 `/api/openapi/getJsonApiFormat` 读取当前云端模板，再按模型输入 image1、image2… 的顺序识别 LoadImage 节点。默认模板对应 `470、510、503、520、521、522、523、524、525`，提示词来源为 `516`、生成节点为 `550`、保存节点为 `515`。
 

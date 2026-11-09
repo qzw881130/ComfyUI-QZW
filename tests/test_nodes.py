@@ -45,6 +45,8 @@ class NodeTests(unittest.TestCase):
         cls.GET_SCHEMA().validate()
         required = cls.INPUT_TYPES()["required"]
         self.assertEqual(required["images"][1]["template"]["min"], 1)
+        self.assertEqual(required["images"][1]["template"]["names"], [f"image{i}" for i in range(1, 16)])
+        self.assertEqual(cls.INPUT_TYPES()["optional"]["channel"][1]["default"], "economy")
         self.assertEqual(required["workflow_id"][1]["default"], "2117652716037173249")
         self.assertFalse(required["force_upload"][1]["default"])
         self.assertIn("runninghub", self.package.QZWAPIConfig.INPUT_TYPES()["required"]["protocol"][1]["options"])
@@ -100,7 +102,7 @@ class NodeTests(unittest.TestCase):
         loop = asyncio.new_event_loop()
         try:
             with tempfile.TemporaryDirectory() as directory:
-                for i in range(1, 10):
+                for i in range(1, 16):
                     Image.new("RGB", (16, 16)).save(Path(directory) / f"reference_{i:02d}.png")
                 with patch.object(folder_paths, "get_input_directory", return_value=directory), \
                      patch.dict(nodes.NODE_CLASS_MAPPINGS, mapping), \
@@ -110,6 +112,14 @@ class NodeTests(unittest.TestCase):
                             graph = json.loads(file.read_text(encoding="utf-8"))
                             valid, error, _, errors = loop.run_until_complete(execution.validate_prompt("qzw-test", graph, None))
                             self.assertTrue(valid, (error, errors))
+                    graph = json.loads((ROOT / "examples" / "QZW_RunningHub_GPT_Image25_nine_reference_edit.api.json").read_text(encoding="utf-8"))
+                    graph["378"]["inputs"]["channel"] = "stable"
+                    for i in range(10, 16):
+                        load_id = str(1000 + i)
+                        graph[load_id] = {"class_type": "LoadImage", "inputs": {"image": f"reference_{i:02d}.png"}}
+                        graph["378"]["inputs"][f"images.image{i}"] = [load_id, 0]
+                    valid, error, _, errors = loop.run_until_complete(execution.validate_prompt("qzw-test-15", graph, None))
+                    self.assertTrue(valid, (error, errors))
         finally:
             loop.close()
 

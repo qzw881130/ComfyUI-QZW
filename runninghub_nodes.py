@@ -20,7 +20,8 @@ class QZWRunningHubGPTImage25(io.ComfyNode):
             inputs=[
                 QZWConfig.Input("api_config"),
                 io.Autogrow.Input("images", template=io.Autogrow.TemplateNames(
-                    io.Image.Input("image"), names=[f"image{i}" for i in range(1, 10)], min=1)),
+                    io.Image.Input("image"), names=[f"image{i}" for i in range(1, 16)], min=1),
+                    tooltip="每接入一张参考图，自动增加下一个入口，最多 15 个。超过 10 张请选择 channel=stable。"),
                 io.String.Input("prompt", default="", multiline=True, dynamic_prompts=True),
                 io.Combo.Input("aspect_ratio", options=["auto", *RATIOS], default="16:9"),
                 io.Combo.Input("resolution", options=["1k", "2k", "4k"], default="1k"),
@@ -32,12 +33,14 @@ class QZWRunningHubGPTImage25(io.ComfyNode):
                 io.Int.Input("max_poll_time", default=3600, min=60, max=7200, advanced=True),
                 io.Boolean.Input("force_upload", default=False, advanced=True,
                                  tooltip="跳过上传缓存并刷新。RunningHub 文件与 Aitudou 缓存隔离，最多复用 24 小时，提前 10 分钟失效。"),
+                io.Combo.Input("channel", options=["economy", "stable"], default="economy", optional=True,
+                               tooltip="economy：经济版，最多 10 张；stable：稳定版，支持 15 个入口，按 token 计费，quality=high。"),
             ], outputs=[io.Image.Output(display_name="image"), io.String.Output(display_name="image_urls"),
                         io.String.Output(display_name="response")], is_output_node=True)
 
     @classmethod
     def execute(cls, api_config, prompt, images, aspect_ratio="16:9", resolution="1k", seed=0,
-                workflow_id=DEFAULT_WORKFLOW_ID, poll_interval=5, max_poll_time=3600, force_upload=False):
+                workflow_id=DEFAULT_WORKFLOW_ID, poll_interval=5, max_poll_time=3600, force_upload=False, channel="economy"):
         progress = comfy.utils.ProgressBar(100)
         cache = UploadCache(Path(folder_paths.get_system_user_directory("qzw")) / "runninghub_upload_cache.sqlite3",
                             api_config.base_url, api_config.api_key, file_names=True)
@@ -47,6 +50,6 @@ class QZWRunningHubGPTImage25(io.ComfyNode):
         try:
             return io.NodeOutput(*client.generate(workflow_id=workflow_id, prompt=prompt, images=images,
                 aspect_ratio=aspect_ratio, resolution=resolution, seed=seed,
-                poll_interval=poll_interval, max_poll_time=max_poll_time))
+                poll_interval=poll_interval, max_poll_time=max_poll_time, channel=channel))
         finally:
             client.close()

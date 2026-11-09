@@ -15,6 +15,7 @@ from .image_api import ImageAPIError, ImageClient, encode_images, safe_response
 LOG = logging.getLogger("ComfyUI-QZW")
 DEFAULT_WORKFLOW_ID = "2117652716037173249"
 IMAGE_CLASS = "RH_RhartImageG25FlareImageToImage"
+STABLE_IMAGE_CLASS = "RH_RhartImageG25OfficialTokenFlareEdit"
 
 
 def workflow_layout(graph):
@@ -42,16 +43,34 @@ def workflow_layout(graph):
     return target, slots, outputs[0]
 
 
-def build_workflow(graph, file_names, prompt, aspect_ratio, resolution, seed):
+def build_workflow(graph, file_names, prompt, aspect_ratio, resolution, seed, channel="economy"):
     target, slots, output = workflow_layout(graph)
-    if not 1 <= len(file_names) <= len(slots):
-        raise ValueError(f"该云端模板支持 1–{len(slots)} 张参考图，当前输入 {len(file_names)} 张。")
+    if channel not in ("economy", "stable"):
+        raise ValueError("channel 应为 economy 或 stable。")
+    max_images = 16 if channel == "stable" else 10
+    if not 1 <= len(file_names) <= max_images:
+        hint = "；超过 10 张请选择 channel=stable（稳定版按 token 计费）" if channel == "economy" else ""
+        raise ValueError(f"RunningHub {channel} 支持 1–{max_images} 张参考图，当前输入 {len(file_names)} 张{hint}。")
     if not str(prompt).strip():
         raise ValueError("prompt 不能为空。")
     workflow = copy.deepcopy(graph)
     inputs = workflow[target]["inputs"]
     for field, _ in slots:
         del inputs[field]
+    # The saved template may have fewer LoadImage nodes than the model supports.
+    next_id = max((int(key) for key in workflow if str(key).isdigit()), default=0) + 1
+    used_fields = {field for field, _ in slots}
+    for index in range(1, max_images + 1):
+        if len(slots) >= len(file_names):
+            break
+        field = f"image{index}"
+        if field in used_fields:
+            continue
+        load_id = str(next_id)
+        next_id += 1
+        workflow[load_id] = {"class_type": "LoadImage", "inputs": {"image": ""}}
+        slots.append((field, load_id))
+    slots.sort(key=lambda slot: int(slot[0][5:]))
     for (field, load_id), name in zip(slots, file_names):
         workflow[load_id]["inputs"]["image"] = name
         inputs[field] = [load_id, 0]
@@ -62,6 +81,11 @@ def build_workflow(graph, file_names, prompt, aspect_ratio, resolution, seed):
     else:
         inputs["prompt"] = str(prompt)
     inputs.update(aspectRatio=aspect_ratio, resolution=resolution, seed=int(seed), skip_error=False)
+    if channel == "stable":
+        workflow[target]["class_type"] = STABLE_IMAGE_CLASS
+        inputs.update(quality="high", background="auto", outputFormat="png")
+        if aspect_ratio == "auto":
+            del inputs["aspectRatio"]
 
     # Submit only the selected output and its dependencies, excluding unused example images.
     active = set()
@@ -173,7 +197,7 @@ class RunningHubClient(ImageClient):
         raise ImageAPIError(f"RunningHub 任务 {task_id} 查询超时；任务可能仍在运行，请查询原任务，避免重复生成。")
 
     def generate(self, *, workflow_id, prompt, aspect_ratio="16:9", resolution="1k", seed=0,
-                 images=None, poll_interval=5, max_poll_time=3600):
+                 images=None, poll_interval=5, max_poll_time=3600, channel="economy"):
         if self.config.protocol != "runninghub":
             raise ValueError("请将 QZW API Config 的 protocol 设置为 runninghub，并填写 RunningHub base_url 和 API Key。")
         if not str(workflow_id).strip().isdigit():
@@ -186,9 +210,9 @@ class RunningHubClient(ImageClient):
         self.upload_stats = {"cache_hits": 0, "uploaded": 0}
         graph = self.fetch_workflow(workflow_id)
         # Validate mapping and count before any uploads.
-        build_workflow(graph, [f"reference_{i}.png" for i in range(len(files))], prompt, aspect_ratio, resolution, seed)
+        build_workflow(graph, [f"reference_{i}.png" for i in range(len(files))], prompt, aspect_ratio, resolution, seed, channel)
         file_names = [self.upload(file) for file in files]
-        workflow, overrides, mapping = build_workflow(graph, file_names, prompt, aspect_ratio, resolution, seed)
+        workflow, overrides, mapping = build_workflow(graph, file_names, prompt, aspect_ratio, resolution, seed, channel)
         payload = {"apiKey": self.config.api_key, "workflowId": str(workflow_id),
                    "workflow": json.dumps(workflow, ensure_ascii=False), "nodeInfoList": overrides}
         body = self.post("/task/openapi/create", json=payload)
@@ -210,7 +234,8 @@ class RunningHubClient(ImageClient):
             tensor, urls, dimensions = self.decode({"data": outputs})
         except ImageAPIError as exc:
             raise ImageAPIError(f"RunningHub 任务 {task_id}: {exc}") from None
-        report = {"protocol": "runninghub", "workflow_id": str(workflow_id), "task_id": task_id,
+        report = {"protocol": "runninghub", "channel": channel, "image_class": workflow[mapping["image_node"]]["class_type"],
+                  "workflow_id": str(workflow_id), "task_id": task_id,
                   "endpoint": self.config.base_url + "/task/openapi/create", "mapping": mapping,
                   "request": {"prompt": f"[omitted; {len(prompt)} characters]", "aspectRatio": aspect_ratio,
                               "resolution": resolution, "seed": int(seed), "reference_count": len(files)},

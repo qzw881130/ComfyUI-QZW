@@ -61,19 +61,53 @@ class RunningHubTests(unittest.TestCase):
         return dict(workflow_id=rh.DEFAULT_WORKFLOW_ID, prompt="a useful prompt", aspect_ratio="16:9", resolution="4k",
                     seed=123456, images={"image1": torch.zeros((1, 16, 32, 3))})
 
-    def test_one_three_nine_image_mapping_prunes_examples_without_mutating_template(self):
+    def test_image_mapping_grows_past_template_without_mutating_it(self):
         original = template()
-        for count in (1, 3, 9):
+        for count in (1, 3, 9, 10):
+            load_ids = (LOAD_IDS + ["1000"])[:count]
             files = [f"openapi/reference_{i}.png" for i in range(count)]
             graph, overrides, mapping = rh.build_workflow(original, files, "长提示词" * 3000, "16:9", "4k", 123)
-            self.assertEqual(mapping["reference_nodes"], LOAD_IDS[:count])
-            self.assertEqual(set(graph), {*LOAD_IDS[:count], "515", "516", "550"})
+            self.assertEqual(mapping["reference_nodes"], load_ids)
+            self.assertEqual(set(graph), {*load_ids, "515", "516", "550"})
             self.assertEqual(graph["516"]["inputs"]["prompt"], "长提示词" * 3000)
             self.assertFalse(graph["550"]["inputs"]["skip_error"])
             self.assertEqual(overrides, [{"nodeId": "550", "fieldName": "seed", "fieldValue": 123}])
-            for index, key in enumerate(LOAD_IDS[:count]):
+            for index, key in enumerate(load_ids):
                 self.assertEqual(graph["550"]["inputs"][f"image{index + 1}"], [key, 0])
                 self.assertEqual(graph[key]["inputs"]["image"], files[index])
+        self.assertEqual(original, template())
+
+    def test_all_images_reach_selected_channel_in_numeric_order(self):
+        self.client.upload_cache = None
+        for channel, count in (("economy", 10), ("stable", 15), ("stable", 16)):
+            with self.subTest(channel=channel, count=count):
+                self.session.reset_mock()
+                self.session.request.side_effect = [response({"code": 0, "data": {"prompt": json.dumps(template())}}),
+                    *[response({"code": 0, "data": {"fileName": f"openapi/ref_{i}.png"}}) for i in range(1, count + 1)],
+                    response({"code": 0, "data": {"taskId": "task-one", "taskStatus": "QUEUED"}}),
+                    response(final_result())]
+                args = self.args()
+                args.update(channel=channel, images={f"image{i}": torch.full((1, 16, 32, 3), i / count)
+                                                     for i in reversed(range(1, count + 1))})
+                _, _, report = self.client.generate(**args)
+                submissions = [call for call in self.session.request.call_args_list if call.args[1].endswith("/task/openapi/create")]
+                self.assertEqual(len(submissions), 1)
+                graph = json.loads(submissions[0].kwargs["json"]["workflow"])
+                self.assertEqual(graph["550"]["class_type"], rh.STABLE_IMAGE_CLASS if channel == "stable" else rh.IMAGE_CLASS)
+                if channel == "stable":
+                    self.assertEqual(graph["550"]["inputs"]["quality"], "high")
+                    self.assertEqual(graph["550"]["inputs"]["outputFormat"], "png")
+                for i in range(1, count + 1):
+                    load_id = graph["550"]["inputs"][f"image{i}"][0]
+                    self.assertEqual(graph[load_id]["inputs"]["image"], f"openapi/ref_{i}.png")
+                self.assertEqual(json.loads(report)["request"]["reference_count"], count)
+                self.assertEqual(json.loads(report)["channel"], channel)
+
+    def test_stable_auto_ratio_and_template_preservation(self):
+        original = template()
+        graph, _, _ = rh.build_workflow(original, ["ref.png"] * 15, "test prompt", "auto", "4k", 123, "stable")
+        self.assertNotIn("aspectRatio", graph["550"]["inputs"])
+        self.assertEqual(graph["550"]["inputs"]["resolution"], "4k")
         self.assertEqual(original, template())
 
     def test_full_flow_uploads_filename_submits_once_and_downloads_without_key(self):
@@ -152,8 +186,16 @@ class RunningHubTests(unittest.TestCase):
     def test_too_many_images_fail_before_upload(self):
         self.session.request.return_value = response({"code": 0, "data": {"prompt": json.dumps(template())}})
         args = self.args()
-        args["images"] = {"image1": torch.zeros((10, 16, 32, 3))}
-        with self.assertRaisesRegex(ValueError, "当前输入 10 张"):
+        args["images"] = {"image1": torch.zeros((11, 16, 32, 3))}
+        with self.assertRaisesRegex(ValueError, "当前输入 11 张"):
+            self.client.generate(**args)
+        self.assertEqual(self.session.request.call_count, 1)
+
+    def test_stable_over_capacity_fails_before_upload(self):
+        self.session.request.return_value = response({"code": 0, "data": {"prompt": json.dumps(template())}})
+        args = self.args()
+        args.update(channel="stable", images={"image1": torch.zeros((17, 16, 32, 3))})
+        with self.assertRaisesRegex(ValueError, "当前输入 17 张"):
             self.client.generate(**args)
         self.assertEqual(self.session.request.call_count, 1)
 
