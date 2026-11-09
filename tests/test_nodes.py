@@ -30,7 +30,8 @@ class NodeTests(unittest.TestCase):
         schema.validate()
         required = node.INPUT_TYPES()["required"]
         options = required["model"][1]["options"]
-        self.assertEqual(len(options), 7)
+        self.assertEqual(len(options), 8)
+        self.assertEqual(options[-2]["key"], "aitudou-image-g-v2.5-lowprice")
         self.assertEqual(options[-1]["key"], "custom")
         self.assertIn("custom_model", options[-1]["inputs"]["required"])
         self.assertEqual(required["images"][1]["template"]["min"], 0)

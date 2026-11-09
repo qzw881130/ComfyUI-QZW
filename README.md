@@ -16,7 +16,7 @@ python -m pip install -r ComfyUI-QZW/requirements.txt
 ## 使用
 
 1. 在 `QZW API Config` 设置 `base_url` 和凭据，再把 `api_config` 接到图片节点。
-2. `model` 保留 Flare / Sunburst 及其 2k / 4k 六个预设。选择 `custom` 后显示 `custom_model`，可以填写完整模型 ID，也可以把该字符串参数转为输入连接文本节点。
+2. `model` 提供 Flare / Sunburst 及其 2k / 4k 六个预设，以及 `aitudou-image-g-v2.5-lowprice`。选择 `custom` 后显示 `custom_model`，可以填写完整模型 ID，也可以把该字符串参数转为输入连接文本节点。
 3. 填写提示词。文生图无需接图片；参考图按 `image1`、`image2` 顺序连接，输入口自动增加，最多显示 16 个。批次中的每一帧也会单独上传。服务端各模型的参考图数量限制仍适用。
 4. `image` 连接保存图片节点，`response` 可连接文本预览。返回图片不会按请求尺寸强行缩放。
 
@@ -32,7 +32,7 @@ API Base URL：`https://api.aitudou.net`，`protocol=auto` 或 `aitudou`。
 |---|---|
 | 官方 Flare | 选择 `gpt-image-2.5-flare`，自动映射为 `aitudou-image-g-v2.5-flare` |
 | 官方 Sunburst | 选择 `gpt-image-2.5-sunburst`，自动映射为 `aitudou-image-g-v2.5-sunburst` |
-| 低价版 | `model=custom`，`custom_model=aitudou-image-g-v2.5-lowprice` |
+| 低价版 | 直接选择 `aitudou-image-g-v2.5-lowprice`；原有 `custom` 填写方式仍可使用 |
 | 自定义模型 | 原样发送 `custom_model`；须使用所选协议并支持图片节点发送的字段 |
 
 预设模型的 `-2k` / `-4k` 后缀转换成 `resolution`，官方版模型 ID 本身不带后缀。自定义模型名称不会做别名转换。
