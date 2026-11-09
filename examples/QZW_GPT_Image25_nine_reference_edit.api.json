@@ -1,0 +1,152 @@
+{
+  "360": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_01.png"
+    }
+  },
+  "376": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_02.png"
+    }
+  },
+  "377": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_03.png"
+    }
+  },
+  "389": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_04.png"
+    }
+  },
+  "390": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_05.png"
+    }
+  },
+  "391": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_06.png"
+    }
+  },
+  "392": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_07.png"
+    }
+  },
+  "393": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_08.png"
+    }
+  },
+  "394": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference_09.png"
+    }
+  },
+  "384": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "Use the reference images to create a consistent six-panel cinematic storyboard. Preserve the identity of the characters and the setting."
+    }
+  },
+  "397": {
+    "class_type": "QZW_API_Config",
+    "inputs": {
+      "base_url": "https://api.aitudou.net",
+      "protocol": "aitudou",
+      "api_key": "",
+      "api_key_file": ""
+    }
+  },
+  "378": {
+    "class_type": "QZW_GPT_Image_2_5",
+    "inputs": {
+      "prompt": [
+        "384",
+        0
+      ],
+      "model": "custom",
+      "model.custom_model": "aitudou-image-g-v2.5-lowprice",
+      "quality": "auto",
+      "size": "16:9",
+      "resolution": "4k",
+      "n": 1,
+      "background": "auto",
+      "moderation": "auto",
+      "nsfw_check": false,
+      "seed": 0,
+      "async_mode": false,
+      "poll_interval": 5,
+      "max_poll_time": 3600,
+      "api_config": [
+        "397",
+        0
+      ],
+      "images.image1": [
+        "360",
+        0
+      ],
+      "images.image2": [
+        "376",
+        0
+      ],
+      "images.image3": [
+        "377",
+        0
+      ],
+      "images.image4": [
+        "389",
+        0
+      ],
+      "images.image5": [
+        "390",
+        0
+      ],
+      "images.image6": [
+        "391",
+        0
+      ],
+      "images.image7": [
+        "392",
+        0
+      ],
+      "images.image8": [
+        "393",
+        0
+      ],
+      "images.image9": [
+        "394",
+        0
+      ]
+    }
+  },
+  "373": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "378",
+        0
+      ],
+      "filename_prefix": "QZW/GPT_Image25"
+    }
+  },
+  "386": {
+    "class_type": "PreviewAny",
+    "inputs": {
+      "source": [
+        "378",
+        2
+      ]
+    }
+  }
+}

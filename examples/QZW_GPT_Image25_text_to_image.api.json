@@ -1,0 +1,62 @@
+{
+  "384": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "A red ceramic teapot on a white table, soft studio lighting, clean product photograph."
+    }
+  },
+  "397": {
+    "class_type": "QZW_API_Config",
+    "inputs": {
+      "base_url": "https://api.aitudou.net",
+      "protocol": "aitudou",
+      "api_key": "",
+      "api_key_file": ""
+    }
+  },
+  "378": {
+    "class_type": "QZW_GPT_Image_2_5",
+    "inputs": {
+      "prompt": [
+        "384",
+        0
+      ],
+      "model": "custom",
+      "model.custom_model": "aitudou-image-g-v2.5-lowprice",
+      "quality": "auto",
+      "size": "16:9",
+      "resolution": "1k",
+      "n": 1,
+      "background": "auto",
+      "moderation": "auto",
+      "nsfw_check": false,
+      "seed": 0,
+      "async_mode": false,
+      "poll_interval": 5,
+      "max_poll_time": 3600,
+      "api_config": [
+        "397",
+        0
+      ]
+    }
+  },
+  "373": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "378",
+        0
+      ],
+      "filename_prefix": "QZW/GPT_Image25"
+    }
+  },
+  "386": {
+    "class_type": "PreviewAny",
+    "inputs": {
+      "source": [
+        "378",
+        2
+      ]
+    }
+  }
+}
