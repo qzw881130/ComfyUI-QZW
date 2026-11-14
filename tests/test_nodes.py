@@ -44,9 +44,10 @@ class NodeTests(unittest.TestCase):
         cls = self.package.QZWRunningHubGPTImage25
         cls.GET_SCHEMA().validate()
         required = cls.INPUT_TYPES()["required"]
-        self.assertEqual(required["images"][1]["template"]["min"], 1)
+        self.assertEqual(required["images"][1]["template"]["min"], 0)
         self.assertEqual(required["images"][1]["template"]["names"], [f"image{i}" for i in range(1, 16)])
         self.assertEqual(cls.INPUT_TYPES()["optional"]["channel"][1]["default"], "economy")
+        self.assertEqual(cls.INPUT_TYPES()["optional"]["resume_task_id"][1]["default"], "")
         self.assertEqual(required["workflow_id"][1]["default"], "2117652716037173249")
         self.assertFalse(required["force_upload"][1]["default"])
         self.assertIn("runninghub", self.package.QZWAPIConfig.INPUT_TYPES()["required"]["protocol"][1]["options"])
@@ -119,6 +120,13 @@ class NodeTests(unittest.TestCase):
                         graph[load_id] = {"class_type": "LoadImage", "inputs": {"image": f"reference_{i:02d}.png"}}
                         graph["378"]["inputs"][f"images.image{i}"] = [load_id, 0]
                     valid, error, _, errors = loop.run_until_complete(execution.validate_prompt("qzw-test-15", graph, None))
+                    self.assertTrue(valid, (error, errors))
+                    config_id = next(key for key, node in graph.items() if node["class_type"] == "QZW_API_Config")
+                    graph = {config_id: graph[config_id], "378": {"class_type": "QZW_RunningHub_GPT_Image_2_5",
+                             "inputs": {"api_config": [config_id, 0], "prompt": "", "aspect_ratio": "16:9",
+                                        "resolution": "1k", "seed": 0, "workflow_id": "", "poll_interval": 5,
+                                        "max_poll_time": 60, "force_upload": False, "resume_task_id": "123456"}}}
+                    valid, error, _, errors = loop.run_until_complete(execution.validate_prompt("qzw-resume", graph, None))
                     self.assertTrue(valid, (error, errors))
         finally:
             loop.close()

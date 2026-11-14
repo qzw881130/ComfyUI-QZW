@@ -175,6 +175,111 @@ class RunningHubTests(unittest.TestCase):
             self.assertTrue(call.args[1].endswith("/openapi/v2/query"))
             self.assertEqual(call.kwargs["json"], {"taskId": "task-one"})
 
+    def test_workflow_read_retries_ssl_and_gateway_errors(self):
+        gateway = response(None, 502)
+        gateway.json.side_effect = ValueError("HTML gateway error")
+        self.session.request.side_effect = [requests.exceptions.SSLError("unexpected EOF"), gateway,
+            response({"code": 0, "data": {"prompt": json.dumps(template())}})]
+        with patch.object(rh.time, "sleep"):
+            self.assertEqual(self.client.fetch_workflow(rh.DEFAULT_WORKFLOW_ID), template())
+        self.assertEqual(self.session.request.call_count, 3)
+        for call in self.session.request.call_args_list:
+            self.assertTrue(call.args[1].endswith("/api/openapi/getJsonApiFormat"))
+
+    def test_workflow_read_exhausts_bounded_retries_and_redacts_credentials(self):
+        self.session.request.side_effect = requests.exceptions.SSLError(
+            "fake-rh-key https://user:proxy-password@proxy.test EOF")
+        with patch.object(rh.time, "sleep"), self.assertRaises(api.ImageAPIError) as caught:
+            self.client.fetch_workflow(rh.DEFAULT_WORKFLOW_ID)
+        self.assertEqual(self.session.request.call_count, 3)
+        self.assertNotIn("fake-rh-key", str(caught.exception))
+        self.assertNotIn("proxy-password", str(caught.exception))
+
+    def test_submission_gateway_failure_is_never_retried(self):
+        self.session.request.return_value = response(None, 503)
+        with self.assertRaisesRegex(api.ImageAPIError, "提交结果未知"):
+            self.client.post("/task/openapi/create", json={})
+        self.assertEqual(self.session.request.call_count, 1)
+
+    def test_more_than_five_poll_failures_can_recover(self):
+        self.session.request.side_effect = [*[requests.exceptions.SSLError("unexpected EOF") for _ in range(6)],
+                                            response(final_result())]
+        with patch.object(rh.time, "sleep"):
+            self.assertEqual(self.client.poll("task-one", 2, 300)["status"], "SUCCESS")
+        self.assertEqual(self.session.request.call_count, 7)
+        for call in self.session.request.call_args_list:
+            self.assertTrue(call.args[1].endswith("/openapi/v2/query"))
+            self.assertEqual(call.kwargs["json"], {"taskId": "task-one"})
+
+    def test_poll_deadline_preserves_task_id_and_bounds_waits(self):
+        clock = [0.0]
+        self.session.request.side_effect = requests.Timeout("fake-rh-key temporary")
+        with patch.object(rh.time, "monotonic", side_effect=lambda: clock[0]), \
+             patch.object(rh.time, "sleep", side_effect=lambda seconds: clock.__setitem__(0, clock[0] + seconds)), \
+             self.assertRaisesRegex(api.ImageAPIError, "resume_task_id=123456") as caught:
+            self.client.poll("123456", 2, 12)
+        self.assertEqual(clock[0], 12)
+        self.assertEqual(self.session.request.call_count, 3)
+        self.assertEqual(self.session.request.call_args.kwargs["timeout"], (3, 3))
+        self.assertNotIn("fake-rh-key", str(caught.exception))
+        self.assertIn("云端结果尚未确认", str(caught.exception))
+
+    def test_poll_rejects_permanent_errors_without_retry(self):
+        for body, status in (({"msg": "unauthorized"}, 401), ({"code": 1602, "msg": "invalid key"}, 200),
+                             ({"code": 400, "msg": "bad request"}, 400)):
+            with self.subTest(body=body, status=status):
+                self.session.reset_mock()
+                self.session.request.return_value = response(body, status)
+                with self.assertRaisesRegex(api.ImageAPIError, "resume_task_id=123456"):
+                    self.client.poll("123456", 2, 100)
+                self.assertEqual(self.session.request.call_count, 1)
+
+    def test_poll_backoff_remains_interruptible(self):
+        clock = [0.0]
+
+        def interrupt():
+            if clock[0] >= 1:
+                raise InterruptedError("cancelled")
+
+        self.client.check_interrupt = interrupt
+        self.session.request.side_effect = requests.exceptions.SSLError("unexpected EOF")
+        with patch.object(rh.time, "monotonic", side_effect=lambda: clock[0]), \
+             patch.object(rh.time, "sleep", side_effect=lambda seconds: clock.__setitem__(0, clock[0] + seconds)), \
+             self.assertRaises(InterruptedError):
+            self.client.poll("123456", 2, 100)
+        self.assertEqual(clock[0], 1)
+        self.assertEqual(self.session.request.call_count, 1)
+
+    def test_resume_downloads_without_template_upload_or_submission(self):
+        self.session.request.return_value = response(final_result())
+        with patch.object(rh, "encode_images", side_effect=AssertionError("Resume must not encode references")):
+            tensor, urls, raw_report = self.client.generate(workflow_id="", prompt="", images=None,
+                                                           resume_task_id=" 123456 ")
+        self.assertEqual(self.session.request.call_count, 1)
+        self.assertTrue(self.session.request.call_args.args[1].endswith("/openapi/v2/query"))
+        self.assertEqual(self.session.request.call_args.kwargs["json"], {"taskId": "123456"})
+        self.assertEqual(tuple(tensor.shape), (1, 941, 1672, 3))
+        report = json.loads(raw_report)
+        self.assertTrue(report["resumed"])
+        self.assertEqual(report["task_id"], "123456")
+        self.assertEqual(report["reference_uploads"], {"cache_hits": 0, "uploaded": 0})
+        self.assertNotIn("request", report)
+        self.assertNotIn("fake-rh-key", raw_report)
+        self.assertNotIn("headers", self.media.get.call_args.kwargs)
+
+    def test_resume_download_failure_keeps_recovery_id(self):
+        self.session.request.return_value = response(final_result())
+        self.media.get.side_effect = requests.Timeout("temporary")
+        with patch.object(rh.time, "sleep"), self.assertRaisesRegex(api.ImageAPIError, "resume_task_id=123456"):
+            self.client.generate(workflow_id="", prompt="", resume_task_id="123456")
+        self.assertEqual(self.session.request.call_count, 1)
+        self.assertEqual(self.media.get.call_count, 3)
+
+    def test_invalid_resume_id_never_falls_back_to_generation(self):
+        with self.assertRaisesRegex(ValueError, "resume_task_id"):
+            self.client.generate(**self.args(), resume_task_id="invalid")
+        self.session.request.assert_not_called()
+
     def test_wrong_template_fails_before_upload(self):
         graph = template()
         graph["550"]["class_type"] = "OtherModel"

@@ -79,6 +79,10 @@ OpenAI 编辑支持单图 mask：ComfyUI mask 白色区域转换为透明区域�
 
 结果通过 `/openapi/v2/query` 查询并下载，`response` 包含任务 ID、图片节点映射、缓存统计与实际图片尺寸。创建任务不自动重试，查询失败只重试原任务。不会设置会额外计费的 `retainSeconds`。RunningHub 的工作流运行和模型调用按平台规则计费。
 
+读取模板遇到临时连接错误或 HTTP 408/429/500/502/503/504 时，最多尝试 3 次。轮询遇到同类错误会逐步延长间隔，在 `max_poll_time` 时限内继续查询原任务；鉴权、参数错误及云端明确失败不会重复轮询。查询超时表示云端结果尚未确认，不代表生图失败。
+
+查询超时或结果下载失败后，在高级选项 `resume_task_id` 填入日志/错误中的原任务 ID，再执行即可查询和下载原结果。此模式不读取模板、不上传参考图、不新建任务，提示词可留空、参考图可不连接，`response.resumed=true`。需要生成新图时清空该字段；留空后重新执行仍会按普通流程创建新任务。恢复模式仍会执行已连接的上游节点，失效的参考图连接可先断开。
+
 参考图同样使用 MD5 持久化缓存，文件为用户目录下 `__qzw/runninghub_upload_cache.sqlite3`，保存 fileName；与 Aitudou 缓存独立。有效期最多 24 小时，按响应/签名较早时间并预留 10 分钟，`force_upload=true` 可刷新缓存。单图与九图的 UI/API 示例位于 `examples/QZW_RunningHub_*.json`，均不含密钥。
 
 接口文档：[读取工作流](https://www.runninghub.cn/runninghub-api-doc-cn/api-425749014) · [上传](https://www.runninghub.cn/runninghub-api-doc-cn/api-425749007) · [提交工作流](https://www.runninghub.cn/runninghub-api-doc-cn/api-425749013) · [查询 V2](https://www.runninghub.cn/runninghub-api-doc-cn/api-425767306)
@@ -87,7 +91,7 @@ OpenAI 编辑支持单图 mask：ComfyUI mask 白色区域转换为透明区域�
 
 `response` 包含：实际协议、接口、请求模型和尺寸、脱敏后的提交字段、参考图尺寸、任务 ID、原始响应（省略 Base64）、实际解码尺寸和输出 tensor 形状。提示词正文及参考图签名地址不记录到请求摘要中。输出 URL 和 API 原始响应可能含临时结果链接，请按需保管。
 
-发生尺寸不符时给出提示并返回实际图片；不会静默缩放，也不会用空白图掩盖请求失败。HTTP POST 超时或失败不会自动重新提交，避免重复计费；查询超时也不会新建任务。可用日志或 `response` 中的 task_id 查询原任务。停止 ComfyUI 执行并不取消服务端已提交的任务。
+发生尺寸不符时给出提示并返回实际图片；不会静默缩放，也不会用空白图掩盖请求失败。创建生图任务的 POST 超时或失败不会自动重新提交，避免重复计费；查询超时也不会新建任务。可用日志或 `response` 中的 task_id 查询原任务。停止 ComfyUI 执行并不取消服务端已提交的任务。
 
 参考图上传失败发生在生图提交之前。错误信息包含参考图序号、尺寸、文件大小及脱敏后的网络错误详情。`SSLError` 表示 TLS 连接出错，需根据具体原因检查代理、证书或连接中断；节点保持证书校验，不自动切换代理。
 
